@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Accel Tasks API
-  version: 1.0.0
+  version: 1.1.0
 paths:
   /healthz:
     get:
@@ -53,3 +53,6 @@ components:
         status:
           type: string
           enum: [open, archived]
+        priority:
+          type: string
+          enum: [low, medium, high]
