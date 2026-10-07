@@ -12,6 +12,6 @@ describe('api-unit', () => {
     assert.equal(t.status, 'open')
   })
   it('reports contract version', () => {
-    assert.equal(contractVersion(), '1.0.0')
+    assert.equal(contractVersion(), '1.1.0')
   })
 })
