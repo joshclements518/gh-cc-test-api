@@ -1,0 +1,4 @@
+{
+  "paths": ["test/intent.test.js"],
+  "trustedSuiteSources": ["github-actions"]
+}

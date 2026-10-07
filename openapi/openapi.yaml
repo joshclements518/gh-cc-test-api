@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  title: Accel Tasks API
+  version: 1.0.0
+paths:
+  /healthz:
+    get:
+      summary: Health
+      responses:
+        '200':
+          description: ok
+  /tasks:
+    get:
+      summary: List tasks
+      responses:
+        '200':
+          description: task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+components:
+  schemas:
+    Task:
+      type: object
+      required: [id, title, status]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [open, archived]
