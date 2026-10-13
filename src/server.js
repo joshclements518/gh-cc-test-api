@@ -13,6 +13,7 @@ const server = createServer((req, res) => {
         service: 'accel-api',
         repo: 'joshclements518/gh-cc-test-api',
         contract: contractVersion(),
+        sha: (process.env.AICP_GIT_SHA || 'unknown').slice(0, 12),
       }),
     )
     return
