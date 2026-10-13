@@ -3,10 +3,21 @@ import { createTask, listTasks, contractVersion } from './tasks.js'
 
 const port = Number(process.env.PORT || 4000)
 
+const cors = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'content-type',
+}
+
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost')
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, cors)
+    res.end()
+    return
+  }
   if (req.method === 'GET' && url.pathname === '/healthz') {
-    res.writeHead(200, { 'content-type': 'application/json' })
+    res.writeHead(200, { 'content-type': 'application/json', ...cors })
     res.end(
       JSON.stringify({
         ok: true,
