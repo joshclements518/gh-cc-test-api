@@ -1,0 +1,9 @@
+name: always-pass
+on:
+  workflow_dispatch:
+jobs:
+  always-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Always pass
+        run: echo "ACC-F09 always-pass" && exit 0
