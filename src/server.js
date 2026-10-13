@@ -7,7 +7,14 @@ const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost')
   if (req.method === 'GET' && url.pathname === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ ok: true, contract: contractVersion() }))
+    res.end(
+      JSON.stringify({
+        ok: true,
+        service: 'accel-api',
+        repo: 'joshclements518/gh-cc-test-api',
+        contract: contractVersion(),
+      }),
+    )
     return
   }
   if (req.method === 'GET' && url.pathname === '/tasks') {
