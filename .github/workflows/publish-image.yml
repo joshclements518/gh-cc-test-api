@@ -1,0 +1,35 @@
+name: publish-image
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Optional commit SHA (default: github.sha)'
+        required: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          fetch-depth: 0
+      - name: Tip SHA
+        id: tip
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Build and push
+        run: |
+          set -euo pipefail
+          IMG="${{ secrets.ACR_LOGIN_SERVER }}/aicp-demo-api:${{ steps.tip.outputs.sha }}"
+          docker build --build-arg "AICP_GIT_SHA=${{ steps.tip.outputs.sha }}" -t "$IMG" .
+          docker push "$IMG"
+          echo "pushed $IMG"
