@@ -1,0 +1,15 @@
+name: product-ci
+on:
+  workflow_dispatch:
+  push:
+    branches: ['story/**']
+  pull_request:
+jobs:
+  unit-and-intent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit + intent-functional
+        run: |
+          echo "EXT-4 product-ci @ ${{ github.sha }}"
+          if [ -f package.json ]; then npm test --if-present; fi
