@@ -6,4 +6,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Always fail
-        run: echo "ACC-F09 always-fail" && exit 1
+        run: echo "ACC-F09 always-fail (non-acceptance demo)" && exit 1
