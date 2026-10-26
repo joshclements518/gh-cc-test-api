@@ -11,5 +11,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Unit + intent-functional
         run: |
-          echo "EXT-4 product-ci @ ${{ github.sha }}"
+          echo "product-ci @ ${{ github.sha }}"
           if [ -f package.json ]; then npm test --if-present; fi
