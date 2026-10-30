@@ -121,3 +121,44 @@ export function castVote(pollId, optionId, userId) {
   votes.push(vote)
   return { success: true, voteId: vote.id }
 }
+
+/**
+ * @param {string} pollId
+ * @returns {{ pollId: string, question: string, deadline: string, options: Array<{ id: string, text: string, voteCount: number }>, winner: string | null } | null}
+ */
+export function getPollResults(pollId) {
+  const poll = getPoll(pollId)
+  if (!poll) {
+    return null
+  }
+
+  const pollOptions = getOptions(pollId)
+
+  // Count votes for each option
+  const optionsWithCounts = pollOptions.map((option) => {
+    const voteCount = votes.filter((v) => v.optionId === option.id).length
+    return {
+      id: option.id,
+      text: option.text,
+      voteCount,
+    }
+  })
+
+  // Determine winner (option with highest vote count)
+  let winner = null
+  if (optionsWithCounts.length > 0) {
+    const maxVotes = Math.max(...optionsWithCounts.map((opt) => opt.voteCount))
+    const winningOption = optionsWithCounts.find((opt) => opt.voteCount === maxVotes)
+    if (winningOption && maxVotes > 0) {
+      winner = winningOption.id
+    }
+  }
+
+  return {
+    pollId: poll.id,
+    question: poll.question,
+    deadline: poll.deadline,
+    options: optionsWithCounts,
+    winner,
+  }
+}
