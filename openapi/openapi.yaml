@@ -2,6 +2,7 @@ openapi: 3.0.3
 info:
   title: Accel Tasks API
   version: 1.0.0
+  description: API for managing tasks and snack polls
 paths:
   /healthz:
     get:
@@ -40,6 +41,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Task'
+  /polls:
+    post:
+      summary: Create poll
+      description: Create a new poll with question, deadline, and options
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, deadline, options]
+              properties:
+                question:
+                  type: string
+                  description: The poll question
+                  example: "What snack should we get on Friday?"
+                deadline:
+                  type: string
+                  format: date-time
+                  description: ISO timestamp when the poll closes
+                  example: "2026-11-01T17:00:00.000Z"
+                options:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  description: Array of poll options
+                  example: ["Pizza", "Tacos", "Sushi"]
+      responses:
+        '201':
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poll'
+        '400':
+          description: Invalid request (missing fields, past deadline, etc.)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Deadline must be in the future"
 components:
   schemas:
     Task:
@@ -53,3 +99,31 @@ components:
         status:
           type: string
           enum: [open, archived]
+    Poll:
+      type: object
+      required: [id, question, deadline, options, createdAt]
+      properties:
+        id:
+          type: string
+          description: Unique poll identifier
+          example: "poll1"
+        question:
+          type: string
+          description: The poll question
+          example: "What snack should we get on Friday?"
+        deadline:
+          type: string
+          format: date-time
+          description: ISO timestamp when the poll closes
+          example: "2026-11-01T17:00:00.000Z"
+        options:
+          type: array
+          items:
+            type: string
+          description: Array of poll options
+          example: ["Pizza", "Tacos", "Sushi"]
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO timestamp when the poll was created
+          example: "2026-10-30T19:22:00.000Z"
