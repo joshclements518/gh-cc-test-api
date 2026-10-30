@@ -202,4 +202,140 @@ describe('polls-api', () => {
     const data = await voteResponse.json()
     assert.ok(data.error)
   })
+
+  it('GET /polls/:id returns poll details with tallies and winner', async () => {
+    // Create a poll
+    const pollResponse = await fetch(`http://localhost:${port}/polls`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: 'Best Friday snack?',
+        deadline: '2026-11-01T12:00:00Z',
+      }),
+    })
+    const pollData = await pollResponse.json()
+    const pollId = pollData.pollId
+
+    // Add options
+    const pizzaResponse = await fetch(`http://localhost:${port}/polls/${pollId}/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Pizza' }),
+    })
+    const pizzaData = await pizzaResponse.json()
+    const pizzaId = pizzaData.optionId
+
+    const tacoResponse = await fetch(`http://localhost:${port}/polls/${pollId}/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Tacos' }),
+    })
+    const tacoData = await tacoResponse.json()
+    const tacoId = tacoData.optionId
+
+    // Cast votes (3 for pizza, 1 for tacos)
+    await fetch(`http://localhost:${port}/polls/${pollId}/vote`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ optionId: pizzaId, userId: 'user5' }),
+    })
+    await fetch(`http://localhost:${port}/polls/${pollId}/vote`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ optionId: pizzaId, userId: 'user6' }),
+    })
+    await fetch(`http://localhost:${port}/polls/${pollId}/vote`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ optionId: pizzaId, userId: 'user7' }),
+    })
+    await fetch(`http://localhost:${port}/polls/${pollId}/vote`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ optionId: tacoId, userId: 'user8' }),
+    })
+
+    // Get poll results
+    const resultsResponse = await fetch(`http://localhost:${port}/polls/${pollId}`)
+    assert.equal(resultsResponse.status, 200)
+    const results = await resultsResponse.json()
+
+    assert.equal(results.pollId, pollId)
+    assert.equal(results.question, 'Best Friday snack?')
+    assert.equal(results.deadline, '2026-11-01T12:00:00Z')
+    assert.equal(results.options.length, 2)
+
+    // Find pizza and taco options
+    const pizzaOption = results.options.find((opt) => opt.id === pizzaId)
+    const tacoOption = results.options.find((opt) => opt.id === tacoId)
+
+    assert.ok(pizzaOption)
+    assert.equal(pizzaOption.text, 'Pizza')
+    assert.equal(pizzaOption.voteCount, 3)
+
+    assert.ok(tacoOption)
+    assert.equal(tacoOption.text, 'Tacos')
+    assert.equal(tacoOption.voteCount, 1)
+
+    // Pizza should be the winner
+    assert.equal(results.winner, pizzaId)
+  })
+
+  it('GET /polls/:id returns 404 if poll does not exist', async () => {
+    const response = await fetch(`http://localhost:${port}/polls/nonexistent-poll`)
+    assert.equal(response.status, 404)
+    const data = await response.json()
+    assert.ok(data.error)
+  })
+
+  it('GET /polls/:id returns null winner when no votes have been cast', async () => {
+    // Create a poll
+    const pollResponse = await fetch(`http://localhost:${port}/polls`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: 'No votes poll?',
+        deadline: '2026-11-01T12:00:00Z',
+      }),
+    })
+    const pollData = await pollResponse.json()
+    const pollId = pollData.pollId
+
+    // Add an option but don't vote
+    await fetch(`http://localhost:${port}/polls/${pollId}/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Option 1' }),
+    })
+
+    // Get poll results
+    const resultsResponse = await fetch(`http://localhost:${port}/polls/${pollId}`)
+    assert.equal(resultsResponse.status, 200)
+    const results = await resultsResponse.json()
+
+    assert.equal(results.winner, null)
+    assert.equal(results.options[0].voteCount, 0)
+  })
+
+  it('GET /polls/:id returns empty options array when no options added', async () => {
+    // Create a poll without adding options
+    const pollResponse = await fetch(`http://localhost:${port}/polls`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: 'Empty poll?',
+        deadline: '2026-11-01T12:00:00Z',
+      }),
+    })
+    const pollData = await pollResponse.json()
+    const pollId = pollData.pollId
+
+    // Get poll results
+    const resultsResponse = await fetch(`http://localhost:${port}/polls/${pollId}`)
+    assert.equal(resultsResponse.status, 200)
+    const results = await resultsResponse.json()
+
+    assert.equal(results.options.length, 0)
+    assert.equal(results.winner, null)
+  })
 })
