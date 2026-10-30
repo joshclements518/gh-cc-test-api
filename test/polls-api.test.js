@@ -50,4 +50,42 @@ describe('polls-api', () => {
     const data = await response.json()
     assert.ok(data.pollId)
   })
+
+  it('POST /polls/:id/options adds an option and returns 201 with optionId', async () => {
+    // First create a poll
+    const pollResponse = await fetch(`http://localhost:${port}/polls`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: 'Best snack?',
+        deadline: '2026-11-01T12:00:00Z',
+      }),
+    })
+    const pollData = await pollResponse.json()
+    const pollId = pollData.pollId
+
+    // Then add an option
+    const optionResponse = await fetch(`http://localhost:${port}/polls/${pollId}/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Pizza' }),
+    })
+
+    assert.equal(optionResponse.status, 201)
+    const optionData = await optionResponse.json()
+    assert.ok(optionData.optionId)
+    assert.ok(optionData.optionId.startsWith('option-'))
+  })
+
+  it('POST /polls/:id/options returns 404 if poll does not exist', async () => {
+    const response = await fetch(`http://localhost:${port}/polls/nonexistent-poll/options`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Pizza' }),
+    })
+
+    assert.equal(response.status, 404)
+    const data = await response.json()
+    assert.ok(data.error)
+  })
 })

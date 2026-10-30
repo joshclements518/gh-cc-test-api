@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { createTask, listTasks, contractVersion } from './tasks.js'
-import { createPoll } from './polls.js'
+import { createPoll, addOption } from './polls.js'
 
 const port = Number(process.env.PORT || 4000)
 
@@ -54,6 +54,25 @@ const server = createServer((req, res) => {
       const poll = createPoll(String(parsed.question ?? ''), String(parsed.deadline ?? ''))
       res.writeHead(201, { 'content-type': 'application/json' })
       res.end(JSON.stringify({ pollId: poll.id }))
+    })
+    return
+  }
+  // Match POST /polls/:id/options
+  const optionsMatch = url.pathname.match(/^\/polls\/([^/]+)\/options$/)
+  if (req.method === 'POST' && optionsMatch) {
+    const pollId = optionsMatch[1]
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', () => {
+      const parsed = JSON.parse(body || '{}')
+      const option = addOption(pollId, String(parsed.text ?? ''))
+      if (!option) {
+        res.writeHead(404, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Poll not found' }))
+        return
+      }
+      res.writeHead(201, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ optionId: option.id }))
     })
     return
   }
