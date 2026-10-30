@@ -9,6 +9,40 @@ paths:
       responses:
         '200':
           description: ok
+  /polls:
+    post:
+      summary: Create poll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, deadline]
+              properties:
+                question:
+                  type: string
+                  description: The poll question
+                deadline:
+                  type: string
+                  format: date-time
+                  description: Poll deadline in ISO8601 format
+      responses:
+        '201':
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poll'
+        '400':
+          description: Invalid request (empty question or invalid deadline)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
   /tasks:
     get:
       summary: List tasks
@@ -42,6 +76,20 @@ paths:
                 $ref: '#/components/schemas/Task'
 components:
   schemas:
+    Poll:
+      type: object
+      required: [pollId, question, deadline]
+      properties:
+        pollId:
+          type: string
+          description: Unique poll identifier
+        question:
+          type: string
+          description: The poll question
+        deadline:
+          type: string
+          format: date-time
+          description: Poll deadline in ISO8601 format
     Task:
       type: object
       required: [id, title, status]
