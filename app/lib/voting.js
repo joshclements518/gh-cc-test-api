@@ -4,6 +4,17 @@
  */
 
 /**
+ * Escape HTML to prevent XSS attacks
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string safe for HTML insertion
+ */
+function escapeHtml(str) {
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
+}
+
+/**
  * Vote state manager to track if user has already voted
  */
 class VotingManager {
@@ -40,7 +51,7 @@ class VotingManager {
       const pollData = await response.json()
       this.renderPollUI(pollData, container)
     } catch (error) {
-      container.innerHTML = `<div class="error">Error loading poll: ${error.message}</div>`
+      container.innerHTML = `<div class="error">Error loading poll: ${escapeHtml(error.message)}</div>`
     }
   }
 
@@ -60,7 +71,7 @@ class VotingManager {
 
     let html = `
       <div class="poll-container">
-        <h2>${question}</h2>
+        <h2>${escapeHtml(question)}</h2>
         <p class="deadline">Deadline: ${new Date(deadline).toLocaleString()}</p>
         <div class="options-list">
     `
@@ -74,7 +85,7 @@ class VotingManager {
         const isSelected = option.id === this.selectedOptionId
         html += `
           <div class="option ${isSelected ? 'selected' : ''}" data-option-id="${option.id}">
-            <span class="option-text">${option.text}</span>
+            <span class="option-text">${escapeHtml(option.text)}</span>
             ${isSelected ? '<span class="your-vote">← Your vote</span>' : ''}
           </div>
         `
@@ -84,7 +95,7 @@ class VotingManager {
       options.forEach((option) => {
         html += `
           <div class="option" data-option-id="${option.id}">
-            <span class="option-text">${option.text}</span>
+            <span class="option-text">${escapeHtml(option.text)}</span>
             <button class="vote-button" data-option-id="${option.id}">Vote</button>
           </div>
         `
