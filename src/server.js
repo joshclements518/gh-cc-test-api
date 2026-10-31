@@ -1,6 +1,12 @@
 import { createServer } from 'node:http'
+import { readFile } from 'node:fs/promises'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createTask, listTasks, contractVersion } from './tasks.js'
 import { createPoll, addOption, castVote, getPollResults } from './polls.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const projectRoot = join(__dirname, '..')
 
 const port = Number(process.env.PORT || 4000)
 
@@ -10,13 +16,43 @@ const cors = {
   'access-control-allow-headers': 'content-type',
 }
 
-const server = createServer((req, res) => {
+const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost')
   if (req.method === 'OPTIONS') {
     res.writeHead(204, cors)
     res.end()
     return
   }
+
+  // Serve static files from public/ and app/lib/
+  if (req.method === 'GET') {
+    // Serve voting page
+    if (url.pathname === '/' || url.pathname === '/vote' || url.pathname === '/vote.html') {
+      try {
+        const html = await readFile(join(projectRoot, 'public', 'vote.html'), 'utf8')
+        res.writeHead(200, { 'content-type': 'text/html', ...cors })
+        res.end(html)
+        return
+      } catch (err) {
+        // Continue to other routes if file not found
+      }
+    }
+
+    // Serve voting.js
+    if (url.pathname === '/app/lib/voting.js') {
+      try {
+        const js = await readFile(join(projectRoot, 'app', 'lib', 'voting.js'), 'utf8')
+        res.writeHead(200, { 'content-type': 'application/javascript', ...cors })
+        res.end(js)
+        return
+      } catch (err) {
+        res.writeHead(404)
+        res.end('Not found')
+        return
+      }
+    }
+  }
+
   if (req.method === 'GET' && url.pathname === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json', ...cors })
     res.end(
