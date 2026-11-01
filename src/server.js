@@ -1,11 +1,12 @@
 import { createServer } from 'node:http'
 import { createTask, listTasks, contractVersion } from './tasks.js'
+import { createPoll } from './polls.js'
 
 const port = Number(process.env.PORT || 4000)
 
 const cors = {
   'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, OPTIONS',
   'access-control-allow-headers': 'content-type',
 }
 
@@ -42,6 +43,27 @@ const server = createServer((req, res) => {
       const task = createTask(String(parsed.title ?? 'untitled'))
       res.writeHead(201, { 'content-type': 'application/json' })
       res.end(JSON.stringify(task))
+    })
+    return
+  }
+  if (req.method === 'POST' && url.pathname === '/polls') {
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}')
+        if (!parsed.question || !parsed.deadline) {
+          res.writeHead(400, { 'content-type': 'application/json', ...cors })
+          res.end(JSON.stringify({ error: 'question and deadline are required' }))
+          return
+        }
+        const poll = createPoll(parsed.question, parsed.deadline)
+        res.writeHead(201, { 'content-type': 'application/json', ...cors })
+        res.end(JSON.stringify({ id: poll.id }))
+      } catch (err) {
+        res.writeHead(400, { 'content-type': 'application/json', ...cors })
+        res.end(JSON.stringify({ error: err.message }))
+      }
     })
     return
   }
