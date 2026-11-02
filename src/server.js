@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { createTask, listTasks, contractVersion } from './tasks.js'
-import { createPoll, getPoll, addOption, listPolls } from './polls.js'
+import { createPoll, getPoll, addOption, listPolls, castVote } from './polls.js'
 
 const port = Number(process.env.PORT || 4000)
 
@@ -91,6 +91,27 @@ const server = createServer((req, res) => {
       }
       res.writeHead(201, { 'content-type': 'application/json', ...cors })
       res.end(JSON.stringify(option))
+    })
+    return
+  }
+  if (req.method === 'POST' && url.pathname.match(/^\/polls\/[^/]+\/vote$/)) {
+    const pollId = url.pathname.split('/')[2]
+    let body = ''
+    req.on('data', (c) => (body += c))
+    req.on('end', () => {
+      const parsed = JSON.parse(body || '{}')
+      const result = castVote(
+        pollId,
+        String(parsed.userId ?? ''),
+        String(parsed.optionId ?? '')
+      )
+      if (!result.success) {
+        res.writeHead(400, { 'content-type': 'application/json', ...cors })
+        res.end(JSON.stringify({ error: result.error }))
+        return
+      }
+      res.writeHead(200, { 'content-type': 'application/json', ...cors })
+      res.end(JSON.stringify(result))
     })
     return
   }

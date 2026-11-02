@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createTask, listTasks, contractVersion } from '../src/tasks.js'
-import { createPoll, getPoll, addOption, listPolls } from '../src/polls.js'
+import { createPoll, getPoll, addOption, listPolls, castVote } from '../src/polls.js'
 
 describe('api-unit', () => {
   it('lists open tasks', () => {
@@ -83,5 +83,74 @@ describe('polls-unit', () => {
 
     const polls = listPolls()
     assert.ok(polls.length >= initialCount + 2)
+  })
+
+  it('casts a vote successfully', () => {
+    const poll = createPoll('Favorite drink?', '2026-11-10T12:00:00Z')
+    const option1 = addOption(poll.id, 'Coffee')
+    const option2 = addOption(poll.id, 'Tea')
+
+    const result = castVote(poll.id, 'user-123', option1.optionId)
+
+    assert.equal(result.success, true)
+    assert.equal(result.error, undefined)
+
+    // Verify the vote was recorded
+    const updatedPoll = getPoll(poll.id)
+    assert.equal(updatedPoll.votes['user-123'], option1.optionId)
+  })
+
+  it('enforces one vote per user by overwriting previous vote', () => {
+    const poll = createPoll('Best dessert?', '2026-11-12T12:00:00Z')
+    const option1 = addOption(poll.id, 'Cake')
+    const option2 = addOption(poll.id, 'Ice cream')
+
+    // First vote
+    castVote(poll.id, 'user-456', option1.optionId)
+    let updatedPoll = getPoll(poll.id)
+    assert.equal(updatedPoll.votes['user-456'], option1.optionId)
+
+    // Second vote from same user - should overwrite
+    castVote(poll.id, 'user-456', option2.optionId)
+    updatedPoll = getPoll(poll.id)
+    assert.equal(updatedPoll.votes['user-456'], option2.optionId)
+
+    // Should only have one vote for this user
+    const userVotes = Object.keys(updatedPoll.votes).filter(u => u === 'user-456')
+    assert.equal(userVotes.length, 1)
+  })
+
+  it('returns error when voting on non-existent poll', () => {
+    const result = castVote('non-existent-poll', 'user-789', 'opt-999')
+
+    assert.equal(result.success, false)
+    assert.equal(result.error, 'Poll not found')
+  })
+
+  it('returns error when voting for non-existent option', () => {
+    const poll = createPoll('Lunch time?', '2026-11-13T12:00:00Z')
+    addOption(poll.id, '12:00 PM')
+    addOption(poll.id, '1:00 PM')
+
+    const result = castVote(poll.id, 'user-999', 'non-existent-option')
+
+    assert.equal(result.success, false)
+    assert.equal(result.error, 'Option not found in this poll')
+  })
+
+  it('allows multiple users to vote on the same poll', () => {
+    const poll = createPoll('Team activity?', '2026-11-14T12:00:00Z')
+    const option1 = addOption(poll.id, 'Bowling')
+    const option2 = addOption(poll.id, 'Karaoke')
+
+    castVote(poll.id, 'user-1', option1.optionId)
+    castVote(poll.id, 'user-2', option2.optionId)
+    castVote(poll.id, 'user-3', option1.optionId)
+
+    const updatedPoll = getPoll(poll.id)
+    assert.equal(updatedPoll.votes['user-1'], option1.optionId)
+    assert.equal(updatedPoll.votes['user-2'], option2.optionId)
+    assert.equal(updatedPoll.votes['user-3'], option1.optionId)
+    assert.equal(Object.keys(updatedPoll.votes).length, 3)
   })
 })

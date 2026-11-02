@@ -67,6 +67,31 @@ export function addOption(pollId, text) {
 }
 
 /**
+ * Cast a vote for a poll option
+ * @param {string} pollId
+ * @param {string} userId
+ * @param {string} optionId
+ * @returns {{ success: boolean, error?: string }}
+ */
+export function castVote(pollId, userId, optionId) {
+  const poll = getPoll(pollId)
+  if (!poll) {
+    return { success: false, error: 'Poll not found' }
+  }
+
+  // Verify the option exists in this poll
+  const optionExists = poll.options.some(opt => opt.optionId === optionId)
+  if (!optionExists) {
+    return { success: false, error: 'Option not found in this poll' }
+  }
+
+  // Record the vote (overwrites if user already voted)
+  poll.votes[userId] = optionId
+
+  return { success: true }
+}
+
+/**
  * List all polls
  * @returns {Poll[]}
  */
